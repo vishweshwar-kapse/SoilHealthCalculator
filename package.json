@@ -1,6 +1,6 @@
 {
   "name": "soil-health-report-calculator",
-  "homepage": "https://vishweshwar-kapse.github.io/SoilHealthCalculator/"
+  "homepage": "https://vishweshwar-kapse.github.io/SoilHealthCalculator/",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -9,7 +9,7 @@
     "build": "vite build",
     "preview": "vite preview",
 	"predeploy": "npm run build",
-	"deploy": "gh-pages -d build"
+	"deploy": "gh-pages -d dist"
   },
   "dependencies": {
     "react": "^18.2.0",

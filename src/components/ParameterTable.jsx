@@ -9,11 +9,11 @@ export default function ParameterTable({ parameters, values, computed, onChangeV
       <table>
         <thead>
           <tr>
-            <th style={{minWidth:220}}>Soil Health Parameter</th>
-            <th style={{minWidth:260}}>Parameter Description</th>
-            <th style={{minWidth:200}}>Health Range of Parameter</th>
-            <th style={{minWidth:160}}>Current Test Value</th>
-            <th style={{minWidth:220}}>Evaluation</th>
+            <th className="col-param">Soil Health Parameter</th>
+            <th className="col-desc">Parameter Description</th>
+            <th className="col-range">Health Range of Parameter</th>
+            <th className="col-value">Current Test Value</th>
+            <th className="col-eval">Evaluation</th>
           </tr>
         </thead>
         <tbody>
@@ -23,10 +23,10 @@ export default function ParameterTable({ parameters, values, computed, onChangeV
             const evaln = evaluateValueAgainstRanges(valNum, p.ranges)
             return (
               <tr key={p.id}>
-                <td><strong>{p.name || p.id}</strong>{p.unit ? ` (${p.unit})` : ''}{p.type === 'computed' ? ' • computed' : ''}</td>
-                <td>{p.description || ''}</td>
-                <td><div className="range">{formatRanges(p.ranges)}</div></td>
-                <td>
+                <td data-label="Soil Health Parameter"><strong>{p.name || p.id}</strong>{p.unit ? ` (${p.unit})` : ''}{p.type === 'computed' ? ' • computed' : ''}</td>
+                <td data-label="Parameter Description">{p.description || ''}</td>
+                <td data-label="Health Range of Parameter"><div className="range">{formatRanges(p.ranges)}</div></td>
+                <td data-label="Current Test Value">
                   {p.type === 'computed' ? (
                     <span>{Number.isFinite(valNum) ? valNum : ''}</span>
                   ) : (
@@ -39,7 +39,7 @@ export default function ParameterTable({ parameters, values, computed, onChangeV
                     />
                   )}
                 </td>
-                <td>
+                <td data-label="Evaluation">
                   {evaln ? (
                     <span className={`badge ${severityClass(evaln.severity)}`}>{evaln.message || evaln.label}</span>
                   ) : <span className="hint">Enter a value</span>}

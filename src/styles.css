@@ -42,3 +42,43 @@ input[type="text"], input[type="number"] { width: 120px; background: #0f172a; co
 .grow { flex: 1; min-width: 320px; }
 
 .footer { margin-top: 24px; color: var(--muted); font-size: 12px; }
+
+/* --- Mobile responsiveness --- */
+@media (max-width: 768px) {
+  h2 { font-size: 20px; margin: 8px 0 12px; }
+  .container { padding: 12px; }
+  .toolbar { gap: 6px; }
+  .toolbar button, .toolbar .file-label { padding: 8px 10px; }
+
+  /* Let inputs span full width in stacked rows */
+  input[type="text"], input[type="number"] { width: 100%; }
+
+  /* Override any min-widths from header cells */
+  table th { min-width: 0 !important; }
+
+  /* Transform table into stacked cards */
+  .table-wrap { overflow: visible; border: none; background: transparent; }
+  table { border: 0; }
+  thead { display: none; }
+  table, tbody, tr, td { display: block; width: 100%; }
+  tr { margin-bottom: 12px; border: 1px solid var(--border); border-radius: 10px; background: var(--panel); overflow: hidden; }
+  td { border: 0; border-bottom: 1px solid var(--border); padding: 10px 12px; }
+  tr:last-child td { border-bottom: 0; }
+
+  /* Show column labels before values */
+  td::before {
+    content: attr(data-label);
+    display: block;
+    font-size: 12px;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+
+  .badge { font-size: 12px; }
+  .summary { gap: 6px; }
+}
+
+@media (max-width: 420px) {
+  .toolbar { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .toolbar .hint { grid-column: 1 / -1; }
+}
