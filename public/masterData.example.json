@@ -1,0 +1,45 @@
+{
+  "parameters": [
+    {
+      "id": "ph",
+      "name": "Soil pH",
+      "description": "Acidity/alkalinity of soil",
+      "unit": "",
+      "type": "input",
+      "ranges": [
+        { "label": "Acidic", "max": 5.5, "message": "Soil is acidic" },
+        { "label": "Optimal", "min": 6.0, "max": 7.5, "message": "Optimal pH" },
+        { "label": "Alkaline", "min": 7.6, "message": "Soil is alkaline" }
+      ]
+    },
+    {
+      "id": "organic_matter",
+      "name": "Organic Matter (%)",
+      "description": "Percent organic matter",
+      "unit": "%",
+      "type": "input",
+      "ranges": [
+        { "label": "Low", "max": 2.0, "message": "Low organic matter" },
+        { "label": "Moderate", "min": 2.0, "max": 4.0, "message": "Moderate" },
+        { "label": "Optimal", "min": 4.0, "message": "Optimal" }
+      ]
+    },
+    {
+      "id": "base_cations",
+      "name": "Base Cations (meq/100g)",
+      "description": "Ca + Mg + K + Na",
+      "unit": "meq/100g",
+      "type": "computed",
+      "expression": "ca + mg + k + na",
+      "ranges": [
+        { "label": "Low", "max": 10, "message": "Low base cation sum" },
+        { "label": "Optimal", "min": 10, "max": 25, "message": "Optimal" },
+        { "label": "High", "min": 25, "message": "High base cation sum" }
+      ]
+    },
+    { "id": "ca", "name": "Calcium", "description": "Calcium concentration", "unit": "meq/100g", "type": "input", "ranges": [] },
+    { "id": "mg", "name": "Magnesium", "description": "Magnesium concentration", "unit": "meq/100g", "type": "input", "ranges": [] },
+    { "id": "k",  "name": "Potassium", "description": "Potassium concentration", "unit": "meq/100g", "type": "input", "ranges": [] },
+    { "id": "na", "name": "Sodium", "description": "Sodium concentration", "unit": "meq/100g", "type": "input", "ranges": [] }
+  ]
+}
