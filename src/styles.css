@@ -43,6 +43,33 @@ input[type="text"], input[type="number"] { width: 120px; background: #0f172a; co
 
 .footer { margin-top: 24px; color: var(--muted); font-size: 12px; }
 
+/* --- Master Data Editor --- */
+.tabs { display: inline-flex; gap: 6px; margin-right: 8px; }
+.tabs button.active { border-color: var(--accent); box-shadow: 0 0 0 1px color-mix(in oklab, var(--accent) 30%, transparent) inset; }
+
+.md-grid { display: grid; grid-template-columns: 260px 1fr; gap: 12px; }
+.md-list { border: 1px solid var(--border); border-radius: 10px; background: var(--panel); overflow: hidden; }
+.md-list-header { padding: 10px 12px; border-bottom: 1px solid var(--border); font-weight: 600; color: var(--muted); }
+.md-list ul { list-style: none; margin: 0; padding: 0; max-height: 520px; overflow: auto; }
+.md-list li { padding: 10px 12px; border-bottom: 1px solid var(--border); cursor: pointer; }
+.md-list li:last-child { border-bottom: 0; }
+.md-list li.active { background: color-mix(in oklab, var(--accent) 8%, transparent); }
+.md-list .title { font-weight: 600; }
+.md-list .meta { color: var(--muted); font-size: 12px; margin-top: 2px; }
+
+.md-editor .form { display: grid; gap: 10px; }
+.md-editor .row { display: grid; gap: 6px; }
+.md-editor .row.two { grid-template-columns: 1fr 1fr; gap: 10px; }
+.md-editor label { color: var(--muted); font-size: 12px; }
+.md-editor input, .md-editor select { width: 100%; }
+.md-editor .ranges { display: grid; gap: 8px; }
+.range-row { display: grid; grid-template-columns: 120px 120px 120px 1fr auto; gap: 8px; align-items: center; }
+.range-row .sm { width: 100%; }
+.range-row .lg { width: 100%; }
+.editor-header { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.editor-header .spacer { flex: 1; }
+.danger { border-color: color-mix(in oklab, var(--bad) 50%, transparent) !important; color: var(--bad) !important; }
+
 /* --- Mobile responsiveness --- */
 @media (max-width: 768px) {
   h2 { font-size: 20px; margin: 8px 0 12px; }
@@ -76,6 +103,11 @@ input[type="text"], input[type="number"] { width: 120px; background: #0f172a; co
 
   .badge { font-size: 12px; }
   .summary { gap: 6px; }
+
+  .md-grid { grid-template-columns: 1fr; }
+  .md-list ul { max-height: 240px; }
+  .md-editor .row.two { grid-template-columns: 1fr; }
+  .range-row { grid-template-columns: 1fr 1fr; }
 }
 
 @media (max-width: 420px) {

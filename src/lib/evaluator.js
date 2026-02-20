@@ -120,6 +120,13 @@ export function computeAllValues(parameters, inputValues) {
 export function formatRanges(ranges) {
   if (!Array.isArray(ranges)) return ''
   return ranges.map(r => {
+    // Categorical option
+    if (r.value !== undefined && r.value !== null && r.value !== '') {
+      const head = r.label ?? ''
+      const tail = String(r.value)
+      return head ? `${head}: ${tail}` : tail
+    }
+    // Numeric range
     const a = r.min ?? '-∞'
     const b = r.max ?? '+∞'
     return `${r.label ?? ''}: ${a} – ${b}`.trim()
@@ -134,7 +141,24 @@ const defaultSeverity = (label = '') => {
 }
 
 export function evaluateValueAgainstRanges(value, ranges = []) {
-  if (value === undefined || value === null || isNaN(value)) return null
+  if (value === undefined || value === null) return null
+  // Categorical value (string): match on r.value
+  if (typeof value === 'string') {
+    const v = value.trim()
+    if (v === '') return null
+    for (const r of ranges) {
+      if (r && r.value !== undefined && r.value !== null && String(r.value) === v) {
+        return {
+          label: r.label || String(r.value) || 'Uncategorized',
+          message: r.message || r.label || String(r.value) || '',
+          severity: r.severity ?? defaultSeverity(r.label)
+        }
+      }
+    }
+    return { label: 'Out of range', message: 'Value not in options', severity: 1 }
+  }
+  // Numeric value
+  if (isNaN(value)) return null
   for (const r of ranges) {
     const minOk = r.min === null || r.min === undefined || value >= r.min
     const maxOk = r.max === null || r.max === undefined || value <= r.max

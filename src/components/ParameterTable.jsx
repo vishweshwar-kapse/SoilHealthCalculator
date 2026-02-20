@@ -18,9 +18,11 @@ export default function ParameterTable({ parameters, values, computed, onChangeV
         </thead>
         <tbody>
           {parameters.map(p => {
-            const v = p.type === 'computed' ? computed[p.id] : (values[p.id] ?? '')
-            const valNum = p.type === 'computed' ? v : (v === '' ? NaN : Number(v))
-            const evaln = evaluateValueAgainstRanges(valNum, p.ranges)
+            const raw = p.type === 'computed' ? computed[p.id] : (values[p.id] ?? '')
+            const valNum = p.type === 'computed' ? raw : (raw === '' ? NaN : Number(raw))
+            const evaln = p.type === 'select'
+              ? (raw === '' ? null : evaluateValueAgainstRanges(String(raw), p.ranges))
+              : evaluateValueAgainstRanges(valNum, p.ranges)
             return (
               <tr key={p.id}>
                 <td data-label="Soil Health Parameter"><strong>{p.name || p.id}</strong>{p.unit ? ` (${p.unit})` : ''}{p.type === 'computed' ? ' • computed' : ''}</td>
@@ -29,6 +31,13 @@ export default function ParameterTable({ parameters, values, computed, onChangeV
                 <td data-label="Current Test Value">
                   {p.type === 'computed' ? (
                     <span>{Number.isFinite(valNum) ? valNum : ''}</span>
+                  ) : p.type === 'select' ? (
+                    <select value={values[p.id] ?? ''} onChange={e => onChangeValue(p.id, e.target.value)}>
+                      <option value="">Select…</option>
+                      {(p.ranges||[]).filter(r=>r.value!==undefined && r.value!==null && r.value!=='').map((r, i) => (
+                        <option key={i} value={String(r.value)}>{r.value}</option>
+                      ))}
+                    </select>
                   ) : (
                     <input
                       type="number"
