@@ -1,23 +1,5 @@
 import React, { useMemo, useState, useEffect } from 'react'
-
-// Preset option sets for select-type parameters
-const PRESET_SETS = {
-  soil_color: {
-    key: 'soil_color',
-    name: 'Soil Color',
-    options: ['Brown', 'Black', 'Red', 'Yellow', 'Gray', 'White']
-  },
-  soil_texture: {
-    key: 'soil_texture',
-    name: 'Soil Texture',
-    options: ['Sand', 'Sandy loam', 'Loam', 'Silt loam', 'Clay loam', 'Clay']
-  },
-  yes_no: {
-    key: 'yes_no',
-    name: 'Yes/No',
-    options: ['Yes', 'No']
-  }
-}
+import { loadPresets, savePresets } from '../lib/presets'
 
 function emptyParam() {
   return { id: '', name: '', description: '', unit: '', type: 'input', expression: '', ranges: [] }
@@ -32,7 +14,11 @@ function toNumberOrUndef(v) {
 export default function MasterDataEditor({ master, onChangeMaster, onResetDefaults }) {
   const [selectedId, setSelectedId] = useState(master?.parameters?.[0]?.id || '')
   const [draftNew, setDraftNew] = useState(emptyParam())
-  const [draftPresetKey, setDraftPresetKey] = useState('')
+  // Presets library persisted in localStorage (by parameter id)
+  const [presetsLib, setPresetsLib] = useState(() => loadPresets())
+  const [draftNewPresetId, setDraftNewPresetId] = useState('')
+  const [savePresetName, setSavePresetName] = useState('')
+  const [selectedPresetId, setSelectedPresetId] = useState('')
 
   const params = master?.parameters || []
   const selected = useMemo(() => params.find(p => p.id === selectedId) || null, [params, selectedId])
@@ -83,36 +69,74 @@ export default function MasterDataEditor({ master, onChangeMaster, onResetDefaul
     if (!id) return alert('Please provide an id or name for the new parameter')
     if (params.some(p => p.id === id)) return alert('A parameter with this id already exists')
     let ranges = base.ranges || []
-    if (base.type === 'select' && (!ranges || ranges.length === 0) && draftPresetKey && PRESET_SETS[draftPresetKey]) {
-      const preset = PRESET_SETS[draftPresetKey]
-      ranges = preset.options.map(v => ({ value: v, label: '', message: '' }))
+    // If creating a select param and a saved preset is chosen for this id, apply it
+    if (base.type === 'select' && (!ranges || ranges.length === 0) && draftNewPresetId) {
+      const existing = (presetsLib.byParamId?.[id] || []).find(p => p.id === draftNewPresetId)
+      if (existing) ranges = (existing.ranges || []).map(r => ({ ...r }))
     }
     const clean = { ...base, id, ranges }
     const next = [...params, clean]
     onChangeMaster({ ...master, parameters: next })
     setDraftNew(emptyParam())
-    setDraftPresetKey('')
+    setDraftNewPresetId('')
     setSelectedId(id)
   }
 
-  function applyPresetToDraft() {
-    if (draftNew.type !== 'select') return
-    const key = draftPresetKey
-    const preset = PRESET_SETS[key]
-    if (!preset) return
-    setDraftNew(d => ({ ...d, ranges: preset.options.map(v => ({ value: v, label: '', message: '' })) }))
+  // Persist presets library when it changes
+  useEffect(() => { savePresets(presetsLib) }, [presetsLib])
+
+  function presetsForParamId(paramId) {
+    const id = (paramId || '').trim().toLowerCase()
+    return presetsLib?.byParamId?.[id] || []
   }
 
-  // Auto-suggest a preset when id hints at a known set (non-destructive: only select preset field)
-  useEffect(() => {
-    if (draftNew.type === 'select') {
-      const id = (draftNew.id || '').toLowerCase()
-      if (!draftPresetKey) {
-        if (id.includes('color')) setDraftPresetKey('soil_color')
-        else if (id.includes('texture')) setDraftPresetKey('soil_texture')
-      }
-    }
-  }, [draftNew.type, draftNew.id, draftPresetKey])
+  function saveCurrentOptionsAsPreset(paramId) {
+    const id = (paramId || '').trim().toLowerCase()
+    if (!id) return alert('Parameter id is required to save presets')
+    if (!savePresetName.trim()) return alert('Please provide a name for the preset')
+    const p = params.find(x => x.id === id)
+    if (!p || p.type !== 'select') return alert('Only select-type parameters can save presets')
+    const ranges = (p.ranges || []).map(r => ({ value: r.value || '', label: r.label || '', message: r.message || '', severity: r.severity }))
+    const entry = { id: `pz_${Date.now()}_${Math.floor(Math.random()*1e6)}`, name: savePresetName.trim(), ranges }
+    setPresetsLib(prev => {
+      const next = { byParamId: { ...(prev.byParamId || {}) } }
+      const arr = [...(next.byParamId[id] || []), entry]
+      next.byParamId[id] = arr
+      return next
+    })
+    setSavePresetName('')
+  }
+
+  function applyPresetToSelected(paramId) {
+    if (!paramId || !selectedPresetId) return
+    const list = presetsForParamId(paramId)
+    const found = list.find(p => p.id === selectedPresetId)
+    if (!found) return
+    const cloned = (found.ranges || []).map(r => ({ ...r }))
+    updateParam(paramId, { ranges: cloned })
+  }
+
+  function deletePreset(paramId) {
+    if (!paramId || !selectedPresetId) return
+    if (!window.confirm('Delete this preset?')) return
+    const id = (paramId || '').trim().toLowerCase()
+    setPresetsLib(prev => {
+      const next = { byParamId: { ...(prev.byParamId || {}) } }
+      const arr = (next.byParamId[id] || []).filter(p => p.id !== selectedPresetId)
+      next.byParamId[id] = arr
+      return next
+    })
+    setSelectedPresetId('')
+  }
+
+  function insertDraftPresetOptions() {
+    const id = (draftNew.id || '').trim().toLowerCase()
+    if (!id || !draftNewPresetId) return
+    const list = presetsForParamId(id)
+    const found = list.find(p => p.id === draftNewPresetId)
+    if (!found) return
+    setDraftNew(d => ({ ...d, ranges: (found.ranges || []).map(r => ({ ...r })) }))
+  }
 
   return (
     <div className="panel">
@@ -205,6 +229,27 @@ export default function MasterDataEditor({ master, onChangeMaster, onResetDefaul
                 </div>
               )}
 
+              {selected.type === 'select' && (
+                <div className="row two">
+                  <div>
+                    <label>Save as preset for “{selected.id}”</label>
+                    <input placeholder="Preset name" value={savePresetName} onChange={e => setSavePresetName(e.target.value)} />
+                    <button onClick={() => saveCurrentOptionsAsPreset(selected.id)} disabled={!savePresetName.trim()}>Save Preset</button>
+                  </div>
+                  <div>
+                    <label>Load saved preset</label>
+                    <select value={selectedPresetId} onChange={e => setSelectedPresetId(e.target.value)}>
+                      <option value="">Choose saved preset…</option>
+                      {presetsForParamId(selected.id).map(p => (
+                        <option key={p.id} value={p.id}>{p.name}</option>
+                      ))}
+                    </select>
+                    <button onClick={() => applyPresetToSelected(selected.id)} disabled={!selectedPresetId}>Apply to Options</button>
+                    <button className="danger" onClick={() => deletePreset(selected.id)} disabled={!selectedPresetId}>Delete Preset</button>
+                  </div>
+                </div>
+              )}
+
               <div className="row">
                 <button className="danger" onClick={() => deleteParam(selected.id)}>Delete Parameter</button>
               </div>
@@ -227,34 +272,34 @@ export default function MasterDataEditor({ master, onChangeMaster, onResetDefaul
                 <input value={draftNew.name} onChange={e => setDraftNew(d => ({ ...d, name: e.target.value }))} />
               </div>
             </div>
-            <div className="row two">
-              <div>
-                <label>Type</label>
-                <select value={draftNew.type} onChange={e => setDraftNew(d => ({ ...d, type: e.target.value }))}>
-                  <option value="input">input</option>
-                  <option value="computed">computed</option>
-                  <option value="select">select</option>
-                </select>
+              <div className="row two">
+                <div>
+                  <label>Type</label>
+                  <select value={draftNew.type} onChange={e => setDraftNew(d => ({ ...d, type: e.target.value }))}>
+                    <option value="input">input</option>
+                    <option value="computed">computed</option>
+                    <option value="select">select</option>
+                  </select>
+                </div>
+                <div>
+                  <label>Unit</label>
+                  <input value={draftNew.unit} onChange={e => setDraftNew(d => ({ ...d, unit: e.target.value }))} />
+                </div>
               </div>
-              <div>
-                <label>Unit</label>
-                <input value={draftNew.unit} onChange={e => setDraftNew(d => ({ ...d, unit: e.target.value }))} />
-              </div>
-            </div>
             {draftNew.type === 'select' && (
               <div className="row two">
                 <div>
-                  <label>Standard options</label>
-                  <select value={draftPresetKey} onChange={e => setDraftPresetKey(e.target.value)}>
-                    <option value="">Choose preset…</option>
-                    {Object.values(PRESET_SETS).map(p => (
-                      <option key={p.key} value={p.key}>{p.name}</option>
+                  <label>Saved presets for “{(draftNew.id||'').trim()||'id'}”</label>
+                  <select value={draftNewPresetId} onChange={e => setDraftNewPresetId(e.target.value)}>
+                    <option value="">Choose saved preset…</option>
+                    {presetsForParamId(draftNew.id).map(p => (
+                      <option key={p.id} value={p.id}>{p.name}</option>
                     ))}
                   </select>
                 </div>
                 <div>
                   <label>&nbsp;</label>
-                  <button onClick={applyPresetToDraft} disabled={!draftPresetKey}>Insert Preset Options</button>
+                  <button onClick={insertDraftPresetOptions} disabled={!draftNewPresetId}>Insert Preset Options</button>
                 </div>
               </div>
             )}
