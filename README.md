@@ -2,6 +2,9 @@
 
 This is a single-page React application to display and calculate soil health reports without any backend. All data is stored in JSON files that you can import/export, or save directly into a local folder using the browser's File System Access API (supported in Chromium-based browsers).
 
+### Live site
+https://vishweshwar-kapse.github.io/SoilHealthCalculator/
+
 ### Features
 - Landing page table with:
   1. Soil Health Parameter
