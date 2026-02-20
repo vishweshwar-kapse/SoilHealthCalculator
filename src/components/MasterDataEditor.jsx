@@ -1,4 +1,23 @@
-import React, { useMemo, useState } from 'react'
+import React, { useMemo, useState, useEffect } from 'react'
+
+// Preset option sets for select-type parameters
+const PRESET_SETS = {
+  soil_color: {
+    key: 'soil_color',
+    name: 'Soil Color',
+    options: ['Brown', 'Black', 'Red', 'Yellow', 'Gray', 'White']
+  },
+  soil_texture: {
+    key: 'soil_texture',
+    name: 'Soil Texture',
+    options: ['Sand', 'Sandy loam', 'Loam', 'Silt loam', 'Clay loam', 'Clay']
+  },
+  yes_no: {
+    key: 'yes_no',
+    name: 'Yes/No',
+    options: ['Yes', 'No']
+  }
+}
 
 function emptyParam() {
   return { id: '', name: '', description: '', unit: '', type: 'input', expression: '', ranges: [] }
@@ -13,6 +32,7 @@ function toNumberOrUndef(v) {
 export default function MasterDataEditor({ master, onChangeMaster, onResetDefaults }) {
   const [selectedId, setSelectedId] = useState(master?.parameters?.[0]?.id || '')
   const [draftNew, setDraftNew] = useState(emptyParam())
+  const [draftPresetKey, setDraftPresetKey] = useState('')
 
   const params = master?.parameters || []
   const selected = useMemo(() => params.find(p => p.id === selectedId) || null, [params, selectedId])
@@ -62,12 +82,37 @@ export default function MasterDataEditor({ master, onChangeMaster, onResetDefaul
     const id = (base.id || base.name || '').trim().replace(/\s+/g, '_').toLowerCase()
     if (!id) return alert('Please provide an id or name for the new parameter')
     if (params.some(p => p.id === id)) return alert('A parameter with this id already exists')
-    const clean = { ...base, id, ranges: base.ranges || [] }
+    let ranges = base.ranges || []
+    if (base.type === 'select' && (!ranges || ranges.length === 0) && draftPresetKey && PRESET_SETS[draftPresetKey]) {
+      const preset = PRESET_SETS[draftPresetKey]
+      ranges = preset.options.map(v => ({ value: v, label: '', message: '' }))
+    }
+    const clean = { ...base, id, ranges }
     const next = [...params, clean]
     onChangeMaster({ ...master, parameters: next })
     setDraftNew(emptyParam())
+    setDraftPresetKey('')
     setSelectedId(id)
   }
+
+  function applyPresetToDraft() {
+    if (draftNew.type !== 'select') return
+    const key = draftPresetKey
+    const preset = PRESET_SETS[key]
+    if (!preset) return
+    setDraftNew(d => ({ ...d, ranges: preset.options.map(v => ({ value: v, label: '', message: '' })) }))
+  }
+
+  // Auto-suggest a preset when id hints at a known set (non-destructive: only select preset field)
+  useEffect(() => {
+    if (draftNew.type === 'select') {
+      const id = (draftNew.id || '').toLowerCase()
+      if (!draftPresetKey) {
+        if (id.includes('color')) setDraftPresetKey('soil_color')
+        else if (id.includes('texture')) setDraftPresetKey('soil_texture')
+      }
+    }
+  }, [draftNew.type, draftNew.id, draftPresetKey])
 
   return (
     <div className="panel">
@@ -196,6 +241,23 @@ export default function MasterDataEditor({ master, onChangeMaster, onResetDefaul
                 <input value={draftNew.unit} onChange={e => setDraftNew(d => ({ ...d, unit: e.target.value }))} />
               </div>
             </div>
+            {draftNew.type === 'select' && (
+              <div className="row two">
+                <div>
+                  <label>Standard options</label>
+                  <select value={draftPresetKey} onChange={e => setDraftPresetKey(e.target.value)}>
+                    <option value="">Choose preset…</option>
+                    {Object.values(PRESET_SETS).map(p => (
+                      <option key={p.key} value={p.key}>{p.name}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label>&nbsp;</label>
+                  <button onClick={applyPresetToDraft} disabled={!draftPresetKey}>Insert Preset Options</button>
+                </div>
+              </div>
+            )}
             {draftNew.type === 'computed' && (
               <div className="row">
                 <label>Expression</label>
